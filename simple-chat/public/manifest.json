@@ -1,5 +1,5 @@
 {
-  "name": "Instagram Chat",
+  "name": "privet instag",
   "short_name": "InstaChat",
   "description": "Private Chat for Priyansh & Nirali",
   "start_url": "/",
@@ -7,6 +7,7 @@
   "background_color": "#000000",
   "theme_color": "#000000",
   "orientation": "portrait",
+  "scope": "/",
   "icons": [
     {
       "src": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/192px-Instagram_icon.png",
