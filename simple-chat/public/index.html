@@ -58,10 +58,17 @@
                 <div id="chatHeader" style="font-weight: bold;">Name</div>
                 <div id="userStatus">Offline</div>
             </div>
-            <div>
-                <button class="call-btn" onclick="startCall(false)">📞</button>
-                <button class="call-btn" onclick="startCall(true)">📹</button>
-            </div>
+           <div class="header">
+    <div class="user-info">
+        <div id="chatHeader" style="font-weight: bold;">Name</div>
+        <div id="userStatus">Offline</div>
+    </div>
+    <div>
+        <button class="call-btn" onclick="startCall(false)">📞</button>
+        <button class="call-btn" onclick="startCall(true)">📹</button>
+        <button class="call-btn" onclick="logout()" style="color: #ff3b30; margin-left: 15px; font-size: 20px;">🚪</button>
+    </div>
+</div>
         </div>
         <div class="messages" id="messages"></div>
         <div class="input-area">
@@ -197,6 +204,13 @@ socket.on("loadHistory", async (h) => {
         div.innerText = text;
         document.getElementById("messages").append(div);
     }
+    function logout() {
+    if (confirm("Log out karvu che?")) {
+        localStorage.clear(); // Badhu clear kari nakhshe
+        socket.disconnect();
+        window.location.reload();
+    }
+}
 });
        </script>
 </body>
