@@ -15,7 +15,6 @@ const users = {
     Nirali: bcrypt.hashSync("Nirali@0810", 10)
 };
 
-// Juna messages save karva mate
 let chatHistory = [];
 
 io.on("connection", (socket) => {
@@ -26,7 +25,6 @@ io.on("connection", (socket) => {
         if (valid) {
             socket.username = username;
             socket.emit("loginSuccess");
-            // Login thaine juna messages load thase
             socket.emit("loadHistory", chatHistory);
         } else {
             socket.emit("errorMsg", "Wrong password");
@@ -37,7 +35,7 @@ io.on("connection", (socket) => {
         if (!socket.username || !msg.trim()) return;
         const msgData = { user: socket.username, text: msg };
         chatHistory.push(msgData);
-        if (chatHistory.length > 200) chatHistory.shift(); // Max 200 messages rahese
+        if (chatHistory.length > 200) chatHistory.shift(); 
         io.emit("message", msgData);
     });
 
@@ -47,4 +45,4 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, "0.0.0.0", () => console.log(`Server on ${PORT}`));
+server.listen(PORT, "0.0.0.0", () => console.log(`🚀 Server running on port ${PORT}`));
