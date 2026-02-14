@@ -10,14 +10,12 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
         body, html { background: #000; color: #fff; height: 100%; width: 100%; overflow: hidden; position: fixed; }
         
-        /* Login Screen */
         #login { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; background: #000; position: absolute; z-index: 1000; }
         .insta-logo { font-size: 35px; font-weight: bold; font-style: italic; margin-bottom: 30px; }
         .login-box { width: 85%; max-width: 350px; text-align: center; }
         input { width: 100%; padding: 12px; margin: 8px 0; background: #121212; border: 0.5px solid #363636; border-radius: 8px; color: #fff; outline: none; }
         .login-btn { width: 100%; padding: 12px; background: #0095f6; border: none; border-radius: 8px; font-weight: bold; color: #fff; margin-top: 15px; cursor: pointer; }
 
-        /* Chat Screen */
         #chat { display: none; flex-direction: column; height: 100%; }
         .header { height: 70px; border-bottom: 1px solid #262626; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; padding-top: env(safe-area-inset-top); }
         .user-info { display: flex; flex-direction: column; }
@@ -32,7 +30,6 @@
         .input-area { padding: 10px 15px; border-top: 1px solid #262626; display: flex; align-items: center; gap: 10px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
         #messageInput { flex: 1; background: transparent; border: 1px solid #363636; border-radius: 25px; padding: 10px 15px; color: #fff; outline: none; }
 
-        /* Calling UI */
         #video-grid { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; }
         #remote-video { width: 100%; height: 100%; object-fit: cover; }
         #local-video { width: 100px; height: 150px; position: absolute; top: 50px; right: 20px; border: 1px solid #fff; border-radius: 12px; object-fit: cover; transform: scaleX(-1); }
@@ -58,17 +55,11 @@
                 <div id="chatHeader" style="font-weight: bold;">Name</div>
                 <div id="userStatus">Offline</div>
             </div>
-           <div class="header">
-    <div class="user-info">
-        <div id="chatHeader" style="font-weight: bold;">Name</div>
-        <div id="userStatus">Offline</div>
-    </div>
-    <div>
-        <button class="call-btn" onclick="startCall(false)">📞</button>
-        <button class="call-btn" onclick="startCall(true)">📹</button>
-        <button class="call-btn" onclick="logout()" style="color: #ff3b30; margin-left: 15px; font-size: 20px;">🚪</button>
-    </div>
-</div>
+            <div>
+                <button class="call-btn" onclick="startCall(false)">📞</button>
+                <button class="call-btn" onclick="startCall(true)">📹</button>
+                <button class="call-btn" onclick="logout()" style="color: #ff3b30; margin-left: 15px; font-size: 20px;">🚪</button>
+            </div>
         </div>
         <div class="messages" id="messages"></div>
         <div class="input-area">
@@ -89,129 +80,102 @@
 
     <script>
         const socket = io();
-let myUser = "", peer, localStream, currentCall, encryptionKey = null;
+        let myUser = "", peer, localStream, currentCall, encryptionKey = null;
 
-// --- 1. ENCRYPTION LOGIC (AES-GCM) ---
+        // --- 1. ENCRYPTION LOGIC ---
+        async function deriveKey(password) {
+            const encoder = new TextEncoder();
+            const baseKey = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]);
+            return crypto.subtle.deriveKey(
+                { name: "PBKDF2", salt: encoder.encode("insta-salt"), iterations: 100000, hash: "SHA-256" },
+                baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+            );
+        }
 
-// Password mathi Crypto Key banavva mate
-async function deriveKey(password) {
-    const encoder = new TextEncoder();
-    const baseKey = await crypto.subtle.importKey(
-        "raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]
-    );
-    return crypto.subtle.deriveKey(
-        { name: "PBKDF2", salt: encoder.encode("insta-salt"), iterations: 100000, hash: "SHA-256" },
-        baseKey,
-        { name: "AES-GCM", length: 256 },
-        false,
-        ["encrypt", "decrypt"]
-    );
-}
+        async function encryptMessage(text) {
+            const iv = crypto.getRandomValues(new Uint8Array(12));
+            const encoded = new TextEncoder().encode(text);
+            const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, encryptionKey, encoded);
+            return {
+                ct: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
+                iv: btoa(String.fromCharCode(...iv))
+            };
+        }
 
-// Message Encrypt karva mate
-async function encryptMessage(text) {
-    const iv = crypto.getRandomValues(new Uint8Array(12));
-    const encoded = new TextEncoder().encode(text);
-    const ciphertext = await crypto.subtle.encrypt(
-        { name: "AES-GCM", iv: iv },
-        encryptionKey,
-        encoded
-    );
-    return {
-        ct: btoa(String.fromCharCode(...new Uint8Array(ciphertext))),
-        iv: btoa(String.fromCharCode(...iv))
-    };
-}
+        async function decryptMessage(data) {
+            try {
+                const ciphertext = new Uint8Array(atob(data.ct).split("").map(c => c.charCodeAt(0)));
+                const iv = new Uint8Array(atob(data.iv).split("").map(c => c.charCodeAt(0)));
+                const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, encryptionKey, ciphertext);
+                return new TextDecoder().decode(decrypted);
+            } catch (e) { return "🔒 Encrypted Message"; }
+        }
 
-// Message Decrypt karva mate
-async function decryptMessage(data) {
-    try {
-        const ciphertext = new Uint8Array(atob(data.ct).split("").map(c => c.charCodeAt(0)));
-        const iv = new Uint8Array(atob(data.iv).split("").map(c => c.charCodeAt(0)));
-        const decrypted = await crypto.subtle.decrypt(
-            { name: "AES-GCM", iv: iv },
-            encryptionKey,
-            ciphertext
-        );
-        return new TextDecoder().decode(decrypted);
-    } catch (e) {
-        return "🔒 Encrypted Message (Key Mismatch)";
-    }
-}
+        // --- 2. LOGIN LOGIC ---
+        document.getElementById("loginSubmit").addEventListener("click", async () => {
+            const u = document.getElementById("username").value;
+            const p = document.getElementById("password").value;
+            if(!u || !p) return alert("Details enter karo");
+            myUser = u;
+            encryptionKey = await deriveKey(p);
+            localStorage.setItem("chat_user", u);
+            localStorage.setItem("chat_pass", p);
+            socket.emit("login", { username: u, password: p });
+        });
 
-// --- 2. LOGIN & SOCKET LOGIC ---
+        window.onload = async () => {
+            const u = localStorage.getItem("chat_user"), p = localStorage.getItem("chat_pass");
+            if(u && p) {
+                myUser = u;
+                encryptionKey = await deriveKey(p);
+                socket.emit("login", { username: u, password: p });
+            }
+        };
 
-document.getElementById("loginSubmit").addEventListener("click", async () => {
-    const u = document.getElementById("username").value;
-    const p = document.getElementById("password").value;
-    if(!u || !p) return alert("Enter details");
-    
-    myUser = u;
-    encryptionKey = await deriveKey(p); // Key derive karo
-    
-    localStorage.setItem("chat_user", u);
-    localStorage.setItem("chat_pass", p);
-    socket.emit("login", { username: u, password: p });
-});
+        socket.on("loginSuccess", () => {
+            document.getElementById("login").style.display = "none";
+            document.getElementById("chat").style.display = "flex";
+            document.getElementById("chatHeader").innerText = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
+        });
 
-// Auto Login Fix
-window.onload = async () => {
-    const u = localStorage.getItem("chat_user");
-    const p = localStorage.getItem("chat_pass");
-    if(u && p) {
-        myUser = u;
-        encryptionKey = await deriveKey(p);
-        socket.emit("login", { username: u, password: p });
-    }
-};
+        // --- 3. MESSAGING ---
+        async function sendMessage() {
+            const input = document.getElementById("messageInput");
+            if (!input.value.trim() || !encryptionKey) return;
+            const encryptedData = await encryptMessage(input.value);
+            socket.emit("message", encryptedData); 
+            input.value = "";
+        }
 
-// --- 3. MESSAGING WITH E2EE ---
+        socket.on("message", async (data) => {
+            const decryptedText = await decryptMessage(data.text);
+            const div = document.createElement("div");
+            div.className = "message " + (data.user === myUser ? "me" : "other");
+            div.innerText = decryptedText;
+            document.getElementById("messages").prepend(div);
+        });
 
-async function sendMessage() {
-    const input = document.getElementById("messageInput");
-    if (!input.value.trim() || !encryptionKey) return;
+        socket.on("loadHistory", async (h) => {
+            document.getElementById("messages").innerHTML = "";
+            for (let m of h) {
+                const text = await decryptMessage(m.text);
+                const div = document.createElement("div");
+                div.className = "message " + (m.user === myUser ? "me" : "other");
+                div.innerText = text;
+                document.getElementById("messages").append(div);
+            }
+        });
 
-    // Pehla message ne encrypt karo
-    const encryptedData = await encryptMessage(input.value);
-    
-    // Encrypted data server ne moklo
-    socket.emit("message", encryptedData); 
-    input.value = "";
-}
+        // --- 4. LOGOUT (Fixed Scope) ---
+        function logout() {
+            if (confirm("Log out karvu che?")) {
+                localStorage.clear();
+                socket.disconnect();
+                window.location.reload();
+            }
+        }
 
-socket.on("message", async (data) => {
-    // Message aave tyare ene decrypt karo
-    const decryptedText = await decryptMessage(data.text);
-    
-    const div = document.createElement("div");
-    div.className = "message " + (data.user === myUser ? "me" : "other");
-    div.innerText = decryptedText;
-    document.getElementById("messages").prepend(div);
-    
-    // Notification logic
-    if(data.user !== myUser && document.hidden) {
-        new Notification("Private-Insta", { body: "New encrypted notification" });
-    }
-});
-
-// Load History ma pan decryption lagse
-socket.on("loadHistory", async (h) => {
-    document.getElementById("messages").innerHTML = "";
-    for (let m of h) {
-        const text = await decryptMessage(m.text);
-        const div = document.createElement("div");
-        div.className = "message " + (m.user === myUser ? "me" : "other");
-        div.innerText = text;
-        document.getElementById("messages").append(div);
-    }
-    function logout() {
-    if (confirm("Log out karvu che?")) {
-        localStorage.clear(); // Badhu clear kari nakhshe
-        socket.disconnect();
-        window.location.reload();
-    }
-}
-});
-       </script>
+        socket.on("errorMsg", (m) => alert(m));
+    </script>
 </body>
 </html>
