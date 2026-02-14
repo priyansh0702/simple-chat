@@ -1,142 +1,232 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Instagram Style Chat</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        
+        body { background-color: #000; color: #fff; height: 100vh; overflow: hidden; }
 
-<style>
-html, body {
-    height: 100%;
-    margin: 0;
-    font-family: Arial;
-    overflow: hidden;
-}
+        /* --- LOGIN PAGE --- */
+        #login {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #000;
+        }
 
-#login {
-    padding: 20px;
-    text-align: center;
-}
+        .login-card {
+            width: 100%;
+            max-width: 350px;
+            padding: 40px;
+            border: 1px solid #262626;
+            text-align: center;
+            background: #000;
+        }
 
-.chat-container {
-    height: 100vh;
-    display: none;
-    flex-direction: column;
-}
+        .insta-logo {
+            width: 180px;
+            margin-bottom: 30px;
+            filter: invert(1);
+        }
 
-.messages {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px;
-    padding-bottom: 80px;
-}
+        #login input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 8px;
+            background: #121212;
+            border: 1px solid #363636;
+            border-radius: 3px;
+            color: #fff;
+            font-size: 12px;
+        }
 
-.message {
-    max-width: 75%;
-    padding: 10px 14px;
-    margin: 6px 0;
-    border-radius: 18px;
-}
+        #login button {
+            width: 100%;
+            padding: 8px;
+            background-color: #0095f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
 
-.me {
-    background: #0095f6;
-    color: white;
-    margin-left: auto;
-}
+        /* --- CHAT SECTION --- */
+        .chat-container {
+            display: none;
+            flex-direction: column;
+            height: 100vh;
+            background: #000;
+        }
 
-.other {
-    background: #f1f1f1;
-}
+        .chat-header {
+            padding: 15px;
+            border-bottom: 1px solid #262626;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
 
-.input-area {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    display: flex;
-    gap: 6px;
-    padding: 8px;
-    background: white;
-    border-top: 1px solid #ddd;
-}
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(45deg, #f09433, #bc1888);
+            border-radius: 50%;
+        }
 
-.input-area input {
-    flex: 1;
-    font-size: 16px;
-    padding: 10px;
-    border-radius: 20px;
-    border: 1px solid #ccc;
-}
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
 
-.send-btn {
-    background: #0095f6;
-    color: white;
-    border-radius: 50%;
-    border: none;
-    padding: 10px 14px;
-    font-size: 18px;
-}
-</style>
+        .message {
+            max-width: 70%;
+            padding: 8px 15px;
+            font-size: 14px;
+            line-height: 1.4;
+            border-radius: 20px;
+            word-wrap: break-word;
+        }
+
+        .me {
+            align-self: flex-end;
+            background-color: #3797f0;
+            color: white;
+        }
+
+        .other {
+            align-self: flex-start;
+            background-color: #262626;
+            color: white;
+        }
+
+        /* --- INPUT AREA --- */
+        .input-area {
+            padding: 15px;
+            border-top: 1px solid #262626;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background: #000;
+            border: 1px solid #363636;
+            border-radius: 25px;
+            padding: 5px 15px;
+        }
+
+        #messageInput {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 8px 0;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .send-btn {
+            background: none;
+            border: none;
+            color: #0095f6;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
 </head>
-
 <body>
 
-<div id="login">
-    <input id="username" placeholder="Username"><br><br>
-    <input id="password" type="password" placeholder="Password"><br><br>
-    <button onclick="login()">Login</button>
-</div>
-
-<div class="chat-container" id="chat">
-    <div class="messages" id="messages"></div>
-
-    <div class="input-area">
-        <input id="messageInput" placeholder="Message..." />
-        <button class="send-btn" onclick="sendMessage()">➤</button>
+    <div id="login">
+        <div class="login-card">
+            <h1 style="font-style: italic; font-size: 30px; margin-bottom: 25px;">ChatApp</h1>
+            <input id="username" placeholder="Username">
+            <input id="password" type="password" placeholder="Password">
+            <button onclick="login()">Log In</button>
+            <p style="color: #a8a8a8; font-size: 12px; margin-top: 20px;">from <span style="color: #fff; font-weight: bold;">Meta</span></p>
+        </div>
     </div>
-</div>
 
-<!-- socket.io -->
-<script src="/socket.io/socket.io.js"></script>
+    <div class="chat-container" id="chat">
+        <div class="chat-header">
+            <div class="user-avatar"></div>
+            <div>
+                <p id="displayUser" style="font-weight: 600; font-size: 14px;">Direct Message</p>
+                <p style="font-size: 12px; color: #a8a8a8;">Active now</p>
+            </div>
+        </div>
 
-<!-- 👇 YE TUMHARA CHAT JS CODE -->
-<script>
-const socket = io();
+        <div class="messages" id="messages"></div>
 
-function login() {
-    const username = document.getElementById("username").value;
-    const password = document.getElementById("password").value;
+        <div class="input-area">
+            <div class="input-wrapper">
+                <input id="messageInput" placeholder="Message..." autocomplete="off">
+                <button class="send-btn" onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
 
-    socket.emit("login", { username, password });
-}
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
 
-socket.on("loginSuccess", () => {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("chat").style.display = "flex";
-});
+        function login() {
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+            socket.emit("login", { username, password });
+        }
 
-socket.on("errorMsg", (msg) => {
-    alert(msg);
-});
+        socket.on("loginSuccess", () => {
+            document.getElementById("login").style.display = "none";
+            document.getElementById("chat").style.display = "flex";
+            document.getElementById("displayUser").innerText = document.getElementById("username").value;
+        });
 
-function sendMessage() {
-    const input = document.getElementById("messageInput");
-    if (!input.value.trim()) return;
+        socket.on("errorMsg", (msg) => {
+            alert(msg);
+        });
 
-    socket.emit("message", input.value);
-    addMessage(input.value, "me");
-    input.value = "";
-}
+        function sendMessage() {
+            const input = document.getElementById("messageInput");
+            if (!input.value.trim()) return;
 
-socket.on("message", (data) => {
-    addMessage(data.text, "other");
-});
+            socket.emit("message", input.value);
+            addMessage(input.value, "me");
+            input.value = "";
+        }
 
-function addMessage(text, type) {
-    const div = document.createElement("div");
-    div.className = "message " + type;
-    div.innerText = text;
-    document.getElementById("messages").appendChild(div);
-}
-</script>
+        document.getElementById("messageInput").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") sendMessage();
+        });
 
+        socket.on("message", (data) => {
+            addMessage(data.text, "other");
+        });
+
+        function addMessage(text, type) {
+            const div = document.createElement("div");
+            div.className = "message " + type;
+            div.innerText = text;
+            const messagesDiv = document.getElementById("messages");
+            messagesDiv.appendChild(div);
+            
+            // Auto-scroll
+            messagesDiv.scrollTo({ top: messagesDiv.scrollHeight, behavior: 'smooth' });
+        }
+    </script>
 </body>
 </html>
-
