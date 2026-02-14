@@ -3,37 +3,40 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <style>
-        /* CSS Same Rahse (Upar mujab) */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
         body { background: #000; color: #fff; height: 100vh; overflow: hidden; }
+
+        /* Login UI */
         #login { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
         .login-box { background: #000; padding: 30px; border: 1px solid #262626; border-radius: 8px; text-align: center; width: 90%; max-width: 350px; }
         input { width: 100%; padding: 12px; margin: 5px 0; background: #121212; border: 1px solid #363636; border-radius: 4px; color: #fff; outline: none; }
         button { width: 100%; padding: 10px; background: #0095f6; border: none; border-radius: 8px; color: #fff; font-weight: bold; margin-top: 10px; cursor: pointer; }
+
+        /* Chat UI */
         .chat-container { display: none; flex-direction: column; height: 100vh; }
-        .header { padding: 15px; border-bottom: 1px solid #262626; text-align: center; font-weight: 600; }
+        .header { padding: 15px; border-bottom: 1px solid #262626; text-align: center; font-weight: 600; font-size: 16px; }
         .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 5px; }
-        .message { max-width: 75%; padding: 10px 15px; border-radius: 20px; font-size: 14px; word-wrap: break-word; }
+        
+        .message { max-width: 75%; padding: 10px 15px; border-radius: 20px; font-size: 14px; word-wrap: break-word; position: relative; }
         .me { align-self: flex-end; background: #3797f0; color: #fff; border-bottom-right-radius: 4px; }
         .other { align-self: flex-start; background: #262626; color: #fff; border-bottom-left-radius: 4px; }
+
         .seen-status { font-size: 11px; color: #a8a8a8; text-align: right; padding: 2px 15px 10px; display: none; }
+
         .input-area { padding: 12px; border-top: 1px solid #262626; display: flex; align-items: center; gap: 10px; }
         .input-box { flex: 1; border-radius: 25px; padding: 8px 15px; border: 1px solid #363636; background: #000; display: flex; }
-        #messageInput { flex: 1; background: transparent; border: none; color: #fff; outline: none; }
-        .send-btn { background: none; border: none; color: #0095f6; font-weight: bold; cursor: pointer; }
+        #messageInput { flex: 1; background: transparent; border: none; color: #fff; outline: none; padding: 5px 0; }
+        .send-btn { background: none; border: none; color: #0095f6; font-weight: bold; cursor: pointer; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<audio id="sentSound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
-
-<audio id="rcvSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"></audio>
 <div id="login">
     <div class="login-box">
         <h1 style="font-style: italic; margin-bottom: 20px;">Instagram</h1>
         <input id="username" placeholder="Username">
         <input id="password" type="password" placeholder="Password">
-        <button onclick="requestNotify()">Log In</button>
+        <button onclick="login()">Log In</button>
     </div>
 </div>
 
@@ -41,6 +44,7 @@
     <div class="header" id="chatHeader">Direct Message</div>
     <div class="messages" id="messages"></div>
     <div id="seenText" class="seen-status">Seen</div>
+    
     <div class="input-area">
         <div class="input-box">
             <input id="messageInput" placeholder="Message..." autocomplete="off">
@@ -53,12 +57,6 @@
 <script>
     const socket = io();
     let myUser = "";
-
-    // Notification Permission
-    function requestNotify() {
-        Notification.requestPermission();
-        login();
-    }
 
     function login() {
         myUser = document.getElementById("username").value;
@@ -78,9 +76,7 @@
     function sendMessage() {
         const input = document.getElementById("messageInput");
         if (!input.value.trim()) return;
-        
         socket.emit("message", input.value);
-        document.getElementById("sentSound").play().catch(e => {}); // Sent Sound
         input.value = "";
     }
 
@@ -91,31 +87,28 @@
     socket.on("message", (data) => {
         const type = (data.user === myUser) ? "me" : "other";
         
+        // Message add karo
         const div = document.createElement("div");
         div.className = "message " + type;
         div.innerText = data.text;
         const msgDiv = document.getElementById("messages");
         msgDiv.appendChild(div);
+        
+        // Auto scroll
         msgDiv.scrollTop = msgDiv.scrollHeight;
 
+        // "Seen" text hide karo jyare navo message ave
         document.getElementById("seenText").style.display = "none";
 
+        // Jo message samavada no hoy, to server ne kaho ke me 'Seen' karyu
         if (type === "other") {
-            // Receive Sound
-            document.getElementById("rcvSound").play().catch(e => {});
-            
-            // Notification: Jo browser hidden hoy to
-            if (document.hidden && Notification.permission === "granted") {
-                new Notification("New Message", {
-                    body: "You have a new message",
-                    icon: "https://cdn-icons-png.flaticon.com/512/174/174855.png"
-                });
-            }
             socket.emit("markSeen");
         }
     });
 
-    socket.on("userSeen", () => {
+    // Jyare samavadi vyakti message juve
+    socket.on("userSeen", (data) => {
+        // Fakt chello message maro hoy to j 'Seen' dekhado
         document.getElementById("seenText").style.display = "block";
         const msgDiv = document.getElementById("messages");
         msgDiv.scrollTop = msgDiv.scrollHeight;
