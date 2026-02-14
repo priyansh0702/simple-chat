@@ -19,13 +19,13 @@
         #chat { display: none; flex-direction: column; height: 100%; }
         .header { height: 70px; border-bottom: 1px solid #262626; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; padding-top: env(safe-area-inset-top); }
         .user-info { display: flex; flex-direction: column; }
-        #userStatus { font-size: 12px; color: #a8a8a8; }
+        #userStatus { font-size: 12px; color: #a8a8a8; transition: color 0.3s; }
         .call-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; margin-left: 15px; }
 
         .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column-reverse; gap: 10px; }
-        .message { max-width: 75%; padding: 10px 15px; border-radius: 20px; font-size: 15px; }
-        .me { align-self: flex-end; background: #3797f0; }
-        .other { align-self: flex-start; background: #262626; }
+        .message { max-width: 75%; padding: 10px 15px; border-radius: 20px; font-size: 15px; word-wrap: break-word; }
+        .me { align-self: flex-end; background: #3797f0; color: white; }
+        .other { align-self: flex-start; background: #262626; color: white; }
 
         .input-area { padding: 10px 15px; border-top: 1px solid #262626; display: flex; align-items: center; gap: 10px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
         #messageInput { flex: 1; background: transparent; border: 1px solid #363636; border-radius: 25px; padding: 10px 15px; color: #fff; outline: none; }
@@ -64,7 +64,7 @@
         <div class="messages" id="messages"></div>
         <div class="input-area">
             <input id="messageInput" placeholder="Message..." autocomplete="off">
-            <button onclick="sendMessage()" style="color:#0095f6; background:none; border:none; font-weight:bold;">Send</button>
+            <button onclick="sendMessage()" style="color:#0095f6; background:none; border:none; font-weight:bold; cursor:pointer;">Send</button>
         </div>
     </div>
 
@@ -81,6 +81,9 @@
     <script>
         const socket = io();
         let myUser = "", peer, localStream, currentCall, encryptionKey = null;
+
+        // !!! IMPORTANT: This secret MUST be the same for both Priyansh and Nirali !!!
+        const SHARED_CHAT_SECRET = "PriyanshNirali_Secure_2026";
 
         // --- 1. ENCRYPTION LOGIC ---
         async function deriveKey(password) {
@@ -108,7 +111,10 @@
                 const iv = new Uint8Array(atob(data.iv).split("").map(c => c.charCodeAt(0)));
                 const decrypted = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, encryptionKey, ciphertext);
                 return new TextDecoder().decode(decrypted);
-            } catch (e) { return "🔒 Encrypted Message"; }
+            } catch (e) { 
+                console.error("Decryption failed", e);
+                return "🔒 Encrypted Message"; 
+            }
         }
 
         // --- 2. LOGIN LOGIC ---
@@ -116,8 +122,10 @@
             const u = document.getElementById("username").value;
             const p = document.getElementById("password").value;
             if(!u || !p) return alert("Enter details");
+            
             myUser = u;
-            encryptionKey = await deriveKey(p);
+            encryptionKey = await deriveKey(SHARED_CHAT_SECRET); // Uses shared secret
+            
             localStorage.setItem("chat_user", u);
             localStorage.setItem("chat_pass", p);
             socket.emit("login", { username: u, password: p });
@@ -127,7 +135,7 @@
             const u = localStorage.getItem("chat_user"), p = localStorage.getItem("chat_pass");
             if(u && p) {
                 myUser = u;
-                encryptionKey = await deriveKey(p);
+                encryptionKey = await deriveKey(SHARED_CHAT_SECRET); // Uses shared secret
                 socket.emit("login", { username: u, password: p });
             }
         };
@@ -136,9 +144,26 @@
             document.getElementById("login").style.display = "none";
             document.getElementById("chat").style.display = "flex";
             document.getElementById("chatHeader").innerText = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
+            
+            // Fix: Setup Peer for Video Calls
+            peer = new Peer(myUser);
+            setupPeerListeners();
         });
 
-        // --- 3. MESSAGING ---
+        // --- 3. STATUS LOGIC ---
+        socket.on("userStatusUpdate", (onlineList) => {
+            const target = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
+            const statusEl = document.getElementById("userStatus");
+            if (onlineList.includes(target)) {
+                statusEl.innerText = "Active now";
+                statusEl.style.color = "#4ade80"; 
+            } else {
+                statusEl.innerText = "Offline";
+                statusEl.style.color = "#a8a8a8";
+            }
+        });
+
+        // --- 4. MESSAGING ---
         async function sendMessage() {
             const input = document.getElementById("messageInput");
             if (!input.value.trim() || !encryptionKey) return;
@@ -146,6 +171,11 @@
             socket.emit("message", encryptedData); 
             input.value = "";
         }
+
+        // Fix: Send message on Enter key
+        document.getElementById("messageInput").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") sendMessage();
+        });
 
         socket.on("message", async (data) => {
             const decryptedText = await decryptMessage(data.text);
@@ -166,11 +196,52 @@
             }
         });
 
-        // Logout - Bahar muki didhu che
+        // --- 5. VIDEO/AUDIO CALLS ---
+        function setupPeerListeners() {
+            peer.on('call', async (incomingCall) => {
+                if (confirm("Incoming call... Accept?")) {
+                    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    document.getElementById("video-grid").style.display = "block";
+                    document.getElementById("local-video").srcObject = localStream;
+                    incomingCall.answer(localStream);
+                    handleCall(incomingCall);
+                }
+            });
+        }
+
+        async function startCall(video) {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({ video: video, audio: true });
+                document.getElementById("video-grid").style.display = "block";
+                document.getElementById("local-video").srcObject = localStream;
+                const target = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
+                const call = peer.call(target, localStream);
+                handleCall(call);
+            } catch (e) { alert("Camera Error"); }
+        }
+
+        function handleCall(call) {
+            currentCall = call;
+            call.on('stream', (remoteStream) => {
+                document.getElementById("remote-video").srcObject = remoteStream;
+            });
+        }
+
+        function endCall() {
+            if (currentCall) currentCall.close();
+            if (localStream) localStream.getTracks().forEach(t => t.stop());
+            document.getElementById("video-grid").style.display = "none";
+        }
+
+        function toggleMute() {
+            const audioTrack = localStream.getAudioTracks()[0];
+            audioTrack.enabled = !audioTrack.enabled;
+            document.getElementById("muteBtn").innerText = audioTrack.enabled ? "🎤" : "🔇";
+        }
+
         function logout() {
             if (confirm("Log out karvu che?")) {
                 localStorage.clear();
-                socket.disconnect();
                 window.location.reload();
             }
         }

@@ -33,9 +33,9 @@ io.on("connection", (socket) => {
             onlineUsers.add(username);
             
             socket.emit("loginSuccess");
-            // Encrypted history moklo
             socket.emit("loadHistory", chatHistory);
             
+            // Broadcast to everyone that someone is online
             io.emit("userStatusUpdate", Array.from(onlineUsers));
             console.log(`${username} logged in.`);
         } else {
@@ -47,18 +47,15 @@ io.on("connection", (socket) => {
     socket.on("message", (encryptedMsg) => {
         if (!socket.username || !encryptedMsg) return;
 
-        // Ahiyā encryptedMsg e ek object chhe { ct: "...", iv: "..." }
         const messageData = { 
             user: socket.username, 
-            text: encryptedMsg, // Server fakt kachrō (ciphertext) save karshē
+            text: encryptedMsg, // Ciphertext only
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
 
-        // History mā save karo
         chatHistory.push(messageData);
         if (chatHistory.length > 200) chatHistory.shift(); 
 
-        // Badhā nē moklō (Encryption/Decryption client-side thashē)
         io.emit("message", messageData);
     });
 
