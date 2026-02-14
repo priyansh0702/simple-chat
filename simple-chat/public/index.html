@@ -212,14 +212,21 @@ html, body {
     <button onclick="login()">Login</button>
 </div>
 
-<div id="chat" style="display:none;">
-      <button class="icon-btn">📷</button>
-    <button class="icon-btn">🖼</button>
+<div class="chat-container">
 
-    <input type="text" placeholder="Message..." />
+        <div class="messages" id="messages"></div>
 
-    <button class="send-btn">➤</button>
-</div>
+        <div class="input-area">
+            <button class="icon-btn">📷</button>
+            <button class="icon-btn">🖼</button>
+
+            <input type="text" id="messageInput" placeholder="Message..." />
+
+            <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+
+    </div>
+
 
 <script src="/socket.io/socket.io.js"></script>
 
