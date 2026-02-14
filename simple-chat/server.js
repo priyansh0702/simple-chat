@@ -10,6 +10,7 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
 
+// Password hashing mate users
 const users = {
     Priyansh: bcrypt.hashSync("Priyansh@0702", 10),
     Nirali: bcrypt.hashSync("Nirali@0810", 10)
@@ -34,11 +35,11 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("message", (msg) => {
-        if (!socket.username || !msg.trim()) return;
+    socket.on("message", (encryptedData) => {
+        if (!socket.username || !encryptedData) return;
         const messageData = { 
             user: socket.username, 
-            text: msg,
+            text: encryptedData, // Ciphertext object {ct, iv}
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
         };
         chatHistory.push(messageData);
@@ -55,4 +56,4 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, "0.0.0.0", () => console.log(`🚀 Server running on ${PORT}`));
+server.listen(PORT, "0.0.0.0", () => console.log(`🚀 Server on port ${PORT}`));
