@@ -72,8 +72,7 @@ io.on("connection", (socket) => {
 });
 
 // Port Setting (0.0.0.0 thi network ma koi pan connect thai shakshe)
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 server.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`Local: http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
