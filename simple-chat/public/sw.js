@@ -1,19 +1,20 @@
-const CACHE_NAME = 'instachat-v2';
+const CACHE_NAME = 'instachat-v3';
 const assets = [
   '/',
   '/index.html'
 ];
 
-// Install Service Worker and cache files
+// 1. Install Event: Files ne cache ma save kare che
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
+      console.log('Caching shell assets');
       return cache.addAll(assets);
     })
   );
 });
 
-// Activate and remove old caches
+// 2. Activate Event: Juni cache ne clear kare che jethi navo code load thay
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -24,7 +25,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch files from cache if offline
+// 3. Fetch Event: Network na hoy tyare cache mathi load kare che
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {

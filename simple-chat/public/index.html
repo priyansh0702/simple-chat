@@ -8,24 +8,44 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/192px-Instagram_icon.png">
+    
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
         body, html { background: #000; color: #fff; height: 100%; width: 100%; overflow: hidden; position: fixed; overscroll-behavior-y: contain; }
-        #login { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; background: #000; position: absolute; z-index: 100; }
+        
+        /* Login UI */
+        #login { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; background: #000; position: absolute; z-index: 200; }
         .login-box { width: 90%; max-width: 350px; text-align: center; border: 1px solid #262626; padding: 30px; border-radius: 12px; }
         input { width: 100%; padding: 12px; margin: 8px 0; background: #121212; border: 1px solid #363636; border-radius: 5px; color: #fff; outline: none; font-size: 16px; }
         .login-btn { width: 100%; padding: 12px; background: #0095f6; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #fff; }
+
+        /* Chat UI */
         #chat { display: none; flex-direction: column; height: 100%; }
-        .header { height: 60px; border-bottom: 1px solid #262626; display: flex; align-items: center; justify-content: center; font-weight: bold; padding-top: env(safe-area-inset-top); }
+        .header { height: 65px; border-bottom: 1px solid #262626; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; padding-top: env(safe-area-inset-top); }
+        .user-info { display: flex; flex-direction: column; }
+        #chatHeader { font-size: 17px; font-weight: bold; }
+        .status { font-size: 12px; color: #00ff00; }
+        .call-icons { display: flex; gap: 20px; }
+        .call-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+
         .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column-reverse; gap: 8px; }
         .message { max-width: 75%; padding: 10px 15px; border-radius: 20px; font-size: 15px; word-wrap: break-word; }
         .me { align-self: flex-end; background: #3797f0; border-bottom-right-radius: 4px; }
         .other { align-self: flex-start; background: #262626; border-bottom-left-radius: 4px; }
         .seen-status { font-size: 11px; color: #a8a8a8; align-self: flex-end; margin-right: 5px; display: none; margin-bottom: 5px; }
+
         .input-area { padding: 15px; border-top: 1px solid #262626; display: flex; gap: 10px; background: #000; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
         .input-box { flex: 1; border: 1px solid #363636; border-radius: 30px; padding: 8px 18px; display: flex; background: #000; }
         #messageInput { flex: 1; background: transparent; border: none; color: #fff; outline: none; font-size: 16px; }
         .send-btn { background: none; border: none; color: #0095f6; font-weight: bold; padding-left: 10px; }
+
+        /* Video Call Overlay */
+        #video-grid { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 300; }
+        #remote-video { width: 100%; height: 100%; object-fit: cover; }
+        #local-video { width: 100px; height: 150px; position: absolute; bottom: 100px; right: 20px; border: 2px solid #fff; border-radius: 8px; object-fit: cover; }
+        .end-call { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: red; color: #fff; border: none; padding: 15px 30px; border-radius: 30px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -42,7 +62,16 @@
     </div>
 
     <div id="chat">
-        <div class="header" id="chatHeader">Direct</div>
+        <div class="header">
+            <div class="user-info">
+                <div id="chatHeader">Name</div>
+                <div class="status" id="userStatus">Active now</div>
+            </div>
+            <div class="call-icons">
+                <button class="call-btn" onclick="startCall(false)">📞</button>
+                <button class="call-btn" onclick="startCall(true)">📹</button>
+            </div>
+        </div>
         <div class="messages" id="messages"><div id="seenText" class="seen-status">Seen</div></div>
         <div class="input-area">
             <div class="input-box">
@@ -52,19 +81,26 @@
         </div>
     </div>
 
+    <div id="video-grid">
+        <video id="remote-video" autoplay playsinline></video>
+        <video id="local-video" autoplay muted playsinline></video>
+        <button class="end-call" onclick="endCall()">End Call</button>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        const socket = io(); let myUser = "";
+        const socket = io(); 
+        let myUser = "";
+        let peer;
+        let localStream;
+        let currentCall;
+
         if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js'); }
 
-        // --- AUTO LOGIN LOGIC ---
         window.onload = () => {
-            const savedUser = localStorage.getItem("chat_user");
-            const savedPass = localStorage.getItem("chat_pass");
-            if(savedUser && savedPass) {
-                myUser = savedUser;
-                socket.emit("login", { username: savedUser, password: savedPass });
-            }
+            const u = localStorage.getItem("chat_user");
+            const p = localStorage.getItem("chat_pass");
+            if(u && p) { myUser = u; socket.emit("login", { username: u, password: p }); }
         };
 
         function login() {
@@ -80,8 +116,45 @@
         socket.on("loginSuccess", () => {
             document.getElementById("login").style.display = "none";
             document.getElementById("chat").style.display = "flex";
-            document.getElementById("chatHeader").innerText = myUser;
+            document.getElementById("chatHeader").innerText = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
+            
+            // Initialize PeerJS for calling
+            peer = new Peer(myUser);
+            peer.on('call', (call) => {
+                if(confirm("Incoming call...")) {
+                    navigator.mediaDevices.getUserMedia({video: true, audio: true}).then(stream => {
+                        localStream = stream;
+                        document.getElementById('local-video').srcObject = stream;
+                        document.getElementById('video-grid').style.display = "block";
+                        call.answer(stream);
+                        currentCall = call;
+                        call.on('stream', remoteStream => {
+                            document.getElementById('remote-video').srcObject = remoteStream;
+                        });
+                    });
+                }
+            });
         });
+
+        function startCall(isVideo) {
+            const target = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
+            document.getElementById('video-grid').style.display = "block";
+            navigator.mediaDevices.getUserMedia({video: isVideo, audio: true}).then(stream => {
+                localStream = stream;
+                document.getElementById('local-video').srcObject = stream;
+                const call = peer.call(target, stream);
+                currentCall = call;
+                call.on('stream', remoteStream => {
+                    document.getElementById('remote-video').srcObject = remoteStream;
+                });
+            });
+        }
+
+        function endCall() {
+            if(currentCall) currentCall.close();
+            if(localStream) localStream.getTracks().forEach(t => t.stop());
+            document.getElementById('video-grid').style.display = "none";
+        }
 
         function sendMessage() {
             const input = document.getElementById("messageInput");
@@ -94,8 +167,9 @@
         socket.on("message", (data) => {
             const type = (data.user === myUser) ? "me" : "other";
             const div = document.createElement("div"); div.className = "message " + type; div.innerText = data.text;
-            const msgDiv = document.getElementById("messages"); const seenDiv = document.getElementById("seenText");
-            msgDiv.prepend(div); msgDiv.prepend(seenDiv); seenDiv.style.display = "none";
+            const msgDiv = document.getElementById("messages"); 
+            msgDiv.prepend(div); msgDiv.prepend(document.getElementById("seenText"));
+            document.getElementById("seenText").style.display = "none";
             if (type === "other") { document.getElementById("rcvSound").play().catch(()=>{}); socket.emit("markSeen"); }
         });
 
