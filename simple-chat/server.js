@@ -10,8 +10,8 @@ const io = new Server(server);
 app.use(express.static("public"));
 
 const users = {
-    rahul: bcrypt.hashSync("1234", 10),
-    priya: bcrypt.hashSync("5678", 10)
+    Priyansh: bcrypt.hashSync("Priyansh@0702", 10),
+    Nirali: bcrypt.hashSync("Nirali@0810", 10)
 };
 
 let activeUsers = {};
