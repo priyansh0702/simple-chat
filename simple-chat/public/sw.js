@@ -1,16 +1,50 @@
-const CACHE_NAME = 'insta-v11';
-const assets = ['/', '/index.html', '/manifest.json'];
+const CACHE_NAME = 'instachat-v6';
+const assets = [
+  '/',
+  '/index.html',
+  '/manifest.json' // Manifest file nē pan cache mā umero
+];
 
-self.addEventListener('install', (e) => {
-    e.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(assets)));
-    self.skipWaiting();
+// 1. Install Event: Assets nē cache mā save karē chhe
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('Caching shell assets');
+      return cache.addAll(assets);
+    })
+  );
 });
 
-self.addEventListener('activate', (e) => {
-    e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(key => key !== CACHE_NAME && caches.delete(key)))));
-    self.clients.claim();
+// 2. Activate Event: Junī cache nē delete karē chhe
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) => {
+      return Promise.all(
+        keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key))
+      );
+    })
+  );
 });
 
-self.addEventListener('fetch', (e) => {
-    e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+// 3. Fetch Event: Offline support māte cache māthī load karē chhe
+self.addEventListener('fetch', (event) => {
+  if (!(event.request.url.indexOf('http') === 0)) return;
+  event.respondWith(
+    caches.match(event.request).then((res) => {
+      return res || fetch(event.request);
+    })
+  );
+});
+
+// 4. Notification Click Event: Notification par click karatā app khulashē
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window' }).then((clientList) => {
+            if (clientList.length > 0) {
+                return clientList[0].focus();
+            }
+            return clients.openWindow('/');
+        })
+    );
 });
