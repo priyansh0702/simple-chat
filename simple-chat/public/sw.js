@@ -1,10 +1,10 @@
-const CACHE_NAME = 'instachat-v3';
+const CACHE_NAME = 'instachat-v4';
 const assets = [
   '/',
   '/index.html'
 ];
 
-// 1. Install Event: Files ne cache ma save kare che
+// Install Event: Files ne cache ma save kare che
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -14,7 +14,7 @@ self.addEventListener('install', (event) => {
   );
 });
 
-// 2. Activate Event: Juni cache ne clear kare che jethi navo code load thay
+// Activate Event: Juni cache ne clear kare che jethi navo code load thay
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) => {
@@ -25,11 +25,11 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// 3. Fetch Event: Network na hoy tyare cache mathi load kare che
+// Fetch Event: Offline support mate
 self.addEventListener('fetch', (event) => {
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request);
     })
   );
-});
+});gi

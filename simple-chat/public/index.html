@@ -7,51 +7,46 @@
     <link rel="manifest" href="/manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/192px-Instagram_icon.png">
-    
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
-
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-        body, html { background: #000; color: #fff; height: 100%; width: 100%; overflow: hidden; position: fixed; overscroll-behavior-y: contain; }
+        body, html { background: #000; color: #fff; height: 100%; width: 100%; overflow: hidden; position: fixed; }
         
-        /* Login UI */
-        #login { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; background: #000; position: absolute; z-index: 200; }
+        /* Login */
+        #login { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; background: #000; position: absolute; z-index: 500; }
         .login-box { width: 90%; max-width: 350px; text-align: center; border: 1px solid #262626; padding: 30px; border-radius: 12px; }
-        input { width: 100%; padding: 12px; margin: 8px 0; background: #121212; border: 1px solid #363636; border-radius: 5px; color: #fff; outline: none; font-size: 16px; }
-        .login-btn { width: 100%; padding: 12px; background: #0095f6; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; color: #fff; }
+        input { width: 100%; padding: 12px; margin: 8px 0; background: #121212; border: 1px solid #363636; border-radius: 5px; color: #fff; outline: none; }
+        .login-btn { width: 100%; padding: 12px; background: #0095f6; border: none; border-radius: 8px; font-weight: bold; color: #fff; }
 
-        /* Chat UI */
+        /* Chat */
         #chat { display: none; flex-direction: column; height: 100%; }
         .header { height: 65px; border-bottom: 1px solid #262626; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; padding-top: env(safe-area-inset-top); }
         .user-info { display: flex; flex-direction: column; }
-        #chatHeader { font-size: 17px; font-weight: bold; }
         .status { font-size: 12px; color: #00ff00; }
         .call-icons { display: flex; gap: 20px; }
-        .call-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; }
+        .call-btn { background: none; border: none; color: #fff; font-size: 22px; }
 
         .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column-reverse; gap: 8px; }
-        .message { max-width: 75%; padding: 10px 15px; border-radius: 20px; font-size: 15px; word-wrap: break-word; }
-        .me { align-self: flex-end; background: #3797f0; border-bottom-right-radius: 4px; }
-        .other { align-self: flex-start; background: #262626; border-bottom-left-radius: 4px; }
-        .seen-status { font-size: 11px; color: #a8a8a8; align-self: flex-end; margin-right: 5px; display: none; margin-bottom: 5px; }
+        .message { max-width: 75%; padding: 10px 15px; border-radius: 20px; font-size: 15px; }
+        .me { align-self: flex-end; background: #3797f0; }
+        .other { align-self: flex-start; background: #262626; }
+        .seen-status { font-size: 11px; color: #a8a8a8; align-self: flex-end; display: none; }
 
-        .input-area { padding: 15px; border-top: 1px solid #262626; display: flex; gap: 10px; background: #000; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
+        .input-area { padding: 15px; border-top: 1px solid #262626; display: flex; gap: 10px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); }
         .input-box { flex: 1; border: 1px solid #363636; border-radius: 30px; padding: 8px 18px; display: flex; background: #000; }
-        #messageInput { flex: 1; background: transparent; border: none; color: #fff; outline: none; font-size: 16px; }
-        .send-btn { background: none; border: none; color: #0095f6; font-weight: bold; padding-left: 10px; }
+        #messageInput { flex: 1; background: transparent; border: none; color: #fff; outline: none; }
 
-        /* Video Call Overlay */
-        #video-grid { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 300; }
+        /* Calling UI */
+        #video-grid { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 600; }
         #remote-video { width: 100%; height: 100%; object-fit: cover; }
-        #local-video { width: 100px; height: 150px; position: absolute; bottom: 100px; right: 20px; border: 2px solid #fff; border-radius: 8px; object-fit: cover; }
-        .end-call { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); background: red; color: #fff; border: none; padding: 15px 30px; border-radius: 30px; font-weight: bold; }
+        #local-video { width: 90px; height: 130px; position: absolute; top: 40px; right: 20px; border: 2px solid #fff; border-radius: 8px; object-fit: cover; }
+        .call-controls { position: absolute; bottom: 50px; width: 100%; display: flex; justify-content: center; gap: 15px; }
+        .ctrl-btn { background: rgba(255,255,255,0.2); border: none; width: 55px; height: 55px; border-radius: 50%; color: #fff; font-size: 22px; backdrop-filter: blur(10px); }
+        .end-btn { background: #ff3b30; transform: rotate(135deg); }
+        .active-off { background: #ff3b30 !important; }
     </style>
 </head>
 <body>
-    <audio id="sentSound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
-    <audio id="rcvSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"></audio>
-
     <div id="login">
         <div class="login-box">
             <h1 style="font-style:italic; margin-bottom:20px;">Instagram</h1>
@@ -65,7 +60,7 @@
         <div class="header">
             <div class="user-info">
                 <div id="chatHeader">Name</div>
-                <div class="status" id="userStatus">Active now</div>
+                <div class="status">Active now</div>
             </div>
             <div class="call-icons">
                 <button class="call-btn" onclick="startCall(false)">📞</button>
@@ -73,43 +68,37 @@
             </div>
         </div>
         <div class="messages" id="messages"><div id="seenText" class="seen-status">Seen</div></div>
-        <div class="input-area">
-            <div class="input-box">
-                <input id="messageInput" placeholder="Message..." autocomplete="off">
-                <button class="send-btn" onclick="sendMessage()">Send</button>
-            </div>
-        </div>
+        <div class="input-area"><div class="input-box"><input id="messageInput" placeholder="Message..."><button style="color:#0095f6; background:none; border:none; font-weight:bold; padding-left:10px;" onclick="sendMessage()">Send</button></div></div>
     </div>
 
     <div id="video-grid">
         <video id="remote-video" autoplay playsinline></video>
         <video id="local-video" autoplay muted playsinline></video>
-        <button class="end-call" onclick="endCall()">End Call</button>
+        <div class="call-controls">
+            <button class="ctrl-btn" id="muteBtn" onclick="toggleMute()">🎤</button>
+            <button class="ctrl-btn" id="videoBtn" onclick="toggleVideo()">📹</button>
+            <button class="ctrl-btn" onclick="switchCamera()">🔄</button>
+            <button class="ctrl-btn end-btn" onclick="endCall()">📞</button>
+        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const socket = io(); 
-        let myUser = "";
-        let peer;
-        let localStream;
-        let currentCall;
+        let myUser = "", peer, localStream, currentCall, currentFacingMode = "user";
+        let isMuted = false, isVideoOff = false;
 
         if ('serviceWorker' in navigator) { navigator.serviceWorker.register('/sw.js'); }
 
         window.onload = () => {
-            const u = localStorage.getItem("chat_user");
-            const p = localStorage.getItem("chat_pass");
+            const u = localStorage.getItem("chat_user"), p = localStorage.getItem("chat_pass");
             if(u && p) { myUser = u; socket.emit("login", { username: u, password: p }); }
         };
 
         function login() {
-            const u = document.getElementById("username").value;
-            const p = document.getElementById("password").value;
+            const u = document.getElementById("username").value, p = document.getElementById("password").value;
             if(!u || !p) return alert("Details nakho!");
-            myUser = u;
-            localStorage.setItem("chat_user", u);
-            localStorage.setItem("chat_pass", p);
+            myUser = u; localStorage.setItem("chat_user", u); localStorage.setItem("chat_pass", p);
             socket.emit("login", { username: u, password: p });
         }
 
@@ -117,8 +106,6 @@
             document.getElementById("login").style.display = "none";
             document.getElementById("chat").style.display = "flex";
             document.getElementById("chatHeader").innerText = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
-            
-            // Initialize PeerJS for calling
             peer = new Peer(myUser);
             peer.on('call', (call) => {
                 if(confirm("Incoming call...")) {
@@ -128,26 +115,48 @@
                         document.getElementById('video-grid').style.display = "block";
                         call.answer(stream);
                         currentCall = call;
-                        call.on('stream', remoteStream => {
-                            document.getElementById('remote-video').srcObject = remoteStream;
-                        });
+                        call.on('stream', rs => { document.getElementById('remote-video').srcObject = rs; });
                     });
                 }
             });
         });
 
-        function startCall(isVideo) {
-            const target = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
+        async function startCall(isVideo) {
+            isVideoOff = !isVideo;
             document.getElementById('video-grid').style.display = "block";
-            navigator.mediaDevices.getUserMedia({video: isVideo, audio: true}).then(stream => {
-                localStream = stream;
-                document.getElementById('local-video').srcObject = stream;
-                const call = peer.call(target, stream);
-                currentCall = call;
-                call.on('stream', remoteStream => {
-                    document.getElementById('remote-video').srcObject = remoteStream;
-                });
-            });
+            document.getElementById('local-video').style.display = isVideo ? "block" : "none";
+            document.getElementById('videoBtn').style.display = isVideo ? "block" : "none";
+
+            localStream = await navigator.mediaDevices.getUserMedia({video: isVideo, audio: true});
+            document.getElementById('local-video').srcObject = localStream;
+            const target = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
+            currentCall = peer.call(target, localStream);
+            currentCall.on('stream', rs => { document.getElementById('remote-video').srcObject = rs; });
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            localStream.getAudioTracks()[0].enabled = !isMuted;
+            document.getElementById("muteBtn").innerText = isMuted ? "🔇" : "🎤";
+            document.getElementById("muteBtn").classList.toggle("active-off", isMuted);
+        }
+
+        function toggleVideo() {
+            isVideoOff = !isVideoOff;
+            localStream.getVideoTracks()[0].enabled = !isVideoOff;
+            document.getElementById("videoBtn").innerText = isVideoOff ? "🚫" : "📹";
+            document.getElementById("videoBtn").classList.toggle("active-off", isVideoOff);
+        }
+
+        async function switchCamera() {
+            currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
+            const newStream = await navigator.mediaDevices.getUserMedia({video: {facingMode: currentFacingMode}, audio: true});
+            const videoTrack = newStream.getVideoTracks()[0];
+            const sender = currentCall.peerConnection.getSenders().find(s => s.track.kind === 'video');
+            if(sender) sender.replaceTrack(videoTrack);
+            localStream.removeTrack(localStream.getVideoTracks()[0]);
+            localStream.addTrack(videoTrack);
+            document.getElementById('local-video').srcObject = newStream;
         }
 
         function endCall() {
@@ -160,17 +169,16 @@
             const input = document.getElementById("messageInput");
             if (!input.value.trim()) return;
             socket.emit("message", input.value);
-            document.getElementById("sentSound").play().catch(()=>{});
             input.value = "";
         }
 
         socket.on("message", (data) => {
             const type = (data.user === myUser) ? "me" : "other";
             const div = document.createElement("div"); div.className = "message " + type; div.innerText = data.text;
-            const msgDiv = document.getElementById("messages"); 
+            const msgDiv = document.getElementById("messages");
             msgDiv.prepend(div); msgDiv.prepend(document.getElementById("seenText"));
             document.getElementById("seenText").style.display = "none";
-            if (type === "other") { document.getElementById("rcvSound").play().catch(()=>{}); socket.emit("markSeen"); }
+            if (type === "other") socket.emit("markSeen");
         });
 
         socket.on("loadHistory", (history) => {
@@ -179,7 +187,6 @@
                 const div = document.createElement("div"); div.className = "message " + type; div.innerText = data.text;
                 document.getElementById("messages").prepend(div);
             });
-            document.getElementById("messages").prepend(document.getElementById("seenText"));
         });
 
         socket.on("userSeen", () => { document.getElementById("seenText").style.display = "block"; });

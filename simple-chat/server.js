@@ -7,7 +7,7 @@ const path = require("path");
 const app = express();
 const server = http.createServer(app);
 
-// Socket.io Setup - CORS logic sathe jethi mobile ma problem na ave
+// Socket.io setup with CORS for mobile/browser compatibility
 const io = new Server(server, {
     cors: {
         origin: "*",
@@ -15,23 +15,22 @@ const io = new Server(server, {
     }
 });
 
-// Static files (HTML, CSS, JS) serve karva mate
+// Static files serve karva mate (HTML, CSS, JS)
 app.use(express.static(path.join(__dirname, "public")));
 
-// --- USER DATABASE ---
+// --- USER DATABASE (Hashed Passwords) ---
 const users = {
     Priyansh: bcrypt.hashSync("Priyansh@0702", 10),
     Nirali: bcrypt.hashSync("Nirali@0810", 10)
 };
 
-// --- MESSAGE HISTORY ---
-// Aa array ma 200 messages save raheshe
+// --- CHAT MEMORY (Last 200 Messages) ---
 let chatHistory = [];
 
 io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
+    console.log("User Connected:", socket.id);
 
-    // 1. LOGIN LOGIC
+    // 1. Handle Login
     socket.on("login", async ({ username, password }) => {
         if (!users[username]) {
             return socket.emit("errorMsg", "User not found");
@@ -45,12 +44,12 @@ io.on("connection", (socket) => {
         socket.username = username;
         socket.emit("loginSuccess");
         
-        // Login thaye tyare juna messages moklo
+        // Login thaye tyare juna messages load karo
         socket.emit("loadHistory", chatHistory);
-        console.log(`${username} is now online.`);
+        console.log(`${username} logged in.`);
     });
 
-    // 2. CHAT LOGIC
+    // 2. Handle Messaging
     socket.on("message", (msg) => {
         if (!socket.username || !msg.trim()) return;
 
@@ -59,35 +58,31 @@ io.on("connection", (socket) => {
             text: msg
         };
 
-        // History ma save karo
+        // History ma umero ane jo 200 thi vadhe to junu delete karo
         chatHistory.push(messageData);
-
-        // Jo 200 thi vadhi jay to peilo (juno) delete karo
         if (chatHistory.length > 200) {
             chatHistory.shift();
         }
 
-        // Badha ne message mokalo
+        // Badha ne message moklo
         io.emit("message", messageData);
     });
 
-    // 3. SEEN LOGIC
+    // 3. Handle Seen Status
     socket.on("markSeen", () => {
-        if (!socket.username) return;
-        // Samavada ne janavo ke message 'Seen' thayo che
-        socket.broadcast.emit("userSeen");
+        if (socket.username) {
+            socket.broadcast.emit("userSeen");
+        }
     });
 
-    // 4. DISCONNECT
+    // 4. Handle Disconnect
     socket.on("disconnect", () => {
-        if (socket.username) {
-            console.log(`${socket.username} went offline.`);
-        }
+        console.log("User disconnected:", socket.username);
     });
 });
 
-// Port configuration (Render mate process.env.PORT jaruri che)
+// Port configuration for Render/Local
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Chat server active on port ${PORT}`);
+    console.log(`🚀 Node.js server is running on port ${PORT}`);
 });
