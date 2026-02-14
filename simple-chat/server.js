@@ -9,7 +9,6 @@ const io = new Server(server);
 
 app.use(express.static("public"));
 
-// Fixed users with passwords
 const users = {
     rahul: bcrypt.hashSync("1234", 10),
     priya: bcrypt.hashSync("5678", 10)
@@ -26,7 +25,6 @@ io.on("connection", (socket) => {
         }
 
         const valid = await bcrypt.compare(password, users[username]);
-
         if (!valid) {
             return socket.emit("errorMsg", "Wrong password");
         }
@@ -42,6 +40,8 @@ io.on("connection", (socket) => {
     });
 
     socket.on("message", (msg) => {
+        if (!socket.username) return;
+
         socket.broadcast.emit("message", {
             user: socket.username,
             text: msg
@@ -49,7 +49,9 @@ io.on("connection", (socket) => {
     });
 
     socket.on("disconnect", () => {
-        delete activeUsers[socket.username];
+        if (socket.username) {
+            delete activeUsers[socket.username];
+        }
     });
 
 });
