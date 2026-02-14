@@ -55,88 +55,43 @@
     </div>
 
     <script>
-        const socket = io();
-        let myUser = "", encryptionKey = null;
+    const socket = io();
+    let myUser = "", encryptionKey = null;
 
-        // --- ENCRYPTION ---
-        async function deriveKey(password) {
-            const encoder = new TextEncoder();
-            const baseKey = await crypto.subtle.importKey("raw", encoder.encode(password), "PBKDF2", false, ["deriveKey"]);
-            return crypto.subtle.deriveKey(
-                { name: "PBKDF2", salt: encoder.encode("insta-salt"), iterations: 100000, hash: "SHA-256" },
-                baseKey, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
-            );
-        }
+    // Login Fix: Aa event hovo jaruri che screen change karva
+    socket.on("loginSuccess", () => {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("chat").style.display = "flex";
+        document.getElementById("chatHeader").innerText = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
+    });
 
-        async function encryptMessage(text) {
-            const iv = crypto.getRandomValues(new Uint8Array(12));
-            const enc = await crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, encryptionKey, new TextEncoder().encode(text));
-            return { ct: btoa(String.fromCharCode(...new Uint8Array(enc))), iv: btoa(String.fromCharCode(...iv)) };
-        }
+    document.getElementById("loginSubmit").addEventListener("click", async () => {
+        const u = document.getElementById("username").value;
+        const p = document.getElementById("password").value;
+        if(!u || !p) return alert("Enter Details");
+        myUser = u;
+        encryptionKey = await deriveKey(p); // E2EE Key
+        socket.emit("login", { username: u, password: p });
+        localStorage.setItem("chat_user", u);
+        localStorage.setItem("chat_pass", p);
+    });
 
-        async function decryptMessage(data) {
-            try {
-                const ct = new Uint8Array(atob(data.ct).split("").map(c => c.charCodeAt(0)));
-                const iv = new Uint8Array(atob(data.iv).split("").map(c => c.charCodeAt(0)));
-                const dec = await crypto.subtle.decrypt({ name: "AES-GCM", iv: iv }, encryptionKey, ct);
-                return new TextDecoder().decode(dec);
-            } catch (e) { return "🔒 Encrypted Message"; }
-        }
-
-        // --- AUTH ---
-        document.getElementById("loginSubmit").addEventListener("click", async () => {
-            const u = document.getElementById("username").value;
-            const p = document.getElementById("password").value;
-            if(!u || !p) return;
+    // Auto Login
+    window.onload = async () => {
+        const u = localStorage.getItem("chat_user");
+        const p = localStorage.getItem("chat_pass");
+        if(u && p) {
             myUser = u;
             encryptionKey = await deriveKey(p);
             socket.emit("login", { username: u, password: p });
-            localStorage.setItem("chat_user", u);
-            localStorage.setItem("chat_pass", p);
-        });
-
-        socket.on("loginSuccess", () => {
-            document.getElementById("login").style.display = "none";
-            document.getElementById("chat").style.display = "flex";
-            document.getElementById("chatHeader").innerText = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
-        });
-
-        // --- CHAT ---
-        async function sendMessage() {
-            const input = document.getElementById("messageInput");
-            if (!input.value.trim() || !encryptionKey) return;
-            const enc = await encryptMessage(input.value);
-            socket.emit("message", enc);
-            input.value = "";
         }
+    };
 
-        socket.on("message", async (data) => {
-            const text = await decryptMessage(data.text);
-            const div = document.createElement("div");
-            div.className = "message " + (data.user === myUser ? "me" : "other");
-            div.innerText = text;
-            document.getElementById("messages").prepend(div);
-        });
-
-        socket.on("loadHistory", async (h) => {
-            for (let m of h) {
-                const text = await decryptMessage(m.text);
-                const div = document.createElement("div");
-                div.className = "message " + (m.user === myUser ? "me" : "other");
-                div.innerText = text;
-                document.getElementById("messages").append(div);
-            }
-        });
-
-        function logout() {
-            localStorage.clear();
-            window.location.reload();
-        }
-
-        // --- PWA REGISTRATION ---
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js');
-        }
+    // Logout logic
+    function logout() {
+        localStorage.clear();
+        window.location.reload();
+    }
     </script>
 </body>
 </html>goit
