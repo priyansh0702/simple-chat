@@ -7,7 +7,7 @@ const path = require("path");
 const app = express();
 const server = http.createServer(app);
 
-// Socket.io setup with CORS (Render ane Mobile devices mate jaruri)
+// Socket.io Setup - Mobile ane Render mate CORS jaruri che
 const io = new Server(server, {
     cors: {
         origin: "*",
@@ -15,39 +15,39 @@ const io = new Server(server, {
     }
 });
 
-// Static files (public folder ma index.html ane sounds hova joie)
+// Static files serve karo (public folder)
 app.use(express.static(path.join(__dirname, "public")));
 
-// User Data - Priyansh ane Nirali mate
+// --- USER DATABASE ---
 const users = {
     Priyansh: bcrypt.hashSync("Priyansh@0702", 10),
     Nirali: bcrypt.hashSync("Nirali@0810", 10)
 };
 
 io.on("connection", (socket) => {
-    console.log("New connection:", socket.id);
+    console.log("User Connected:", socket.id);
 
-    // 1. LOGIN EVENT
+    // 1. LOGIN LOGIC
     socket.on("login", async ({ username, password }) => {
         if (!users[username]) {
-            return socket.emit("errorMsg", "User not allowed");
+            return socket.emit("errorMsg", "User not found");
         }
 
-        const valid = await bcrypt.compare(password, users[username]);
-        if (!valid) {
+        const isValid = await bcrypt.compare(password, users[username]);
+        if (!isValid) {
             return socket.emit("errorMsg", "Wrong password");
         }
 
         socket.username = username;
         socket.emit("loginSuccess");
-        console.log(`${username} logged in.`);
+        console.log(`${username} is now online.`);
     });
 
-    // 2. MESSAGE EVENT
+    // 2. CHAT LOGIC
     socket.on("message", (msg) => {
-        if (!socket.username) return;
+        if (!socket.username || !msg.trim()) return;
 
-        // Akha server par badha ne message mokalshe
+        // Badha ne message mokalo (Sender + Receiver)
         io.emit("message", {
             user: socket.username,
             text: msg
@@ -57,19 +57,20 @@ io.on("connection", (socket) => {
     // 3. SEEN LOGIC
     socket.on("markSeen", () => {
         if (!socket.username) return;
-        // Bija user ne notification mokalshe ke message 'Seen' thai gayo che
+        // Samavada ne janavo ke message 'Seen' thai gayo che
         socket.broadcast.emit("userSeen");
     });
 
+    // 4. DISCONNECT
     socket.on("disconnect", () => {
         if (socket.username) {
-            console.log(`${socket.username} disconnected.`);
+            console.log(`${socket.username} went offline.`);
         }
     });
 });
 
-// Port handling for Render/Heroku or Localhost
+// Port configuration for Render/Local
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`🚀 Chat server active on port ${PORT}`);
 });
