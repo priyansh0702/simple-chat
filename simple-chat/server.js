@@ -7,8 +7,7 @@ const path = require("path");
 const app = express();
 const server = http.createServer(app);
 
-// Socket.io setup with CORS (Cross-Origin Resource Sharing)
-// Aa Render/Mobile mate bau jaruri che
+// Socket.io setup with CORS (Render ane Mobile devices mate jaruri)
 const io = new Server(server, {
     cors: {
         origin: "*",
@@ -16,75 +15,61 @@ const io = new Server(server, {
     }
 });
 
-// Static files (index.html, sounds) serve karva mate
+// Static files (public folder ma index.html ane sounds hova joie)
 app.use(express.static(path.join(__dirname, "public")));
 
-// User Database - Passwords bcrypt thase login vakhte
+// User Data - Priyansh ane Nirali mate
 const users = {
     Priyansh: bcrypt.hashSync("Priyansh@0702", 10),
     Nirali: bcrypt.hashSync("Nirali@0810", 10)
 };
 
-let activeUsers = {};
-
 io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
+    console.log("New connection:", socket.id);
 
-    // --- LOGIN LOGIC ---
+    // 1. LOGIN EVENT
     socket.on("login", async ({ username, password }) => {
-        // User check
         if (!users[username]) {
             return socket.emit("errorMsg", "User not allowed");
         }
 
-        // Password verify
-        try {
-            const valid = await bcrypt.compare(password, users[username]);
-            if (!valid) {
-                return socket.emit("errorMsg", "Wrong password");
-            }
-
-            // Success
-            socket.username = username;
-            activeUsers[username] = socket.id;
-            socket.emit("loginSuccess");
-            console.log(`${username} logged in successfully.`);
-        } catch (err) {
-            socket.emit("errorMsg", "Server error during login");
+        const valid = await bcrypt.compare(password, users[username]);
+        if (!valid) {
+            return socket.emit("errorMsg", "Wrong password");
         }
+
+        socket.username = username;
+        socket.emit("loginSuccess");
+        console.log(`${username} logged in.`);
     });
 
-    // --- MESSAGE LOGIC ---
+    // 2. MESSAGE EVENT
     socket.on("message", (msg) => {
         if (!socket.username) return;
 
-        // io.emit badha ne message mokalshe (including the sender)
+        // Akha server par badha ne message mokalshe
         io.emit("message", {
             user: socket.username,
             text: msg
         });
     });
 
-    // --- SEEN LOGIC ---
+    // 3. SEEN LOGIC
     socket.on("markSeen", () => {
         if (!socket.username) return;
-        // Bija badha ne janavo ke aa message vanchai gayo che
-        socket.broadcast.emit("userSeen", { seenBy: socket.username });
+        // Bija user ne notification mokalshe ke message 'Seen' thai gayo che
+        socket.broadcast.emit("userSeen");
     });
 
-    // --- DISCONNECT ---
     socket.on("disconnect", () => {
         if (socket.username) {
             console.log(`${socket.username} disconnected.`);
-            delete activeUsers[socket.username];
         }
     });
 });
 
-// Render/Deployment mate dynamic PORT selection
-// Render potani rite PORT assign karshe, local ma 3000 chalse
+// Port handling for Render/Heroku or Localhost
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server active on port: ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
