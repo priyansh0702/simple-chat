@@ -8,69 +8,72 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Public folder mathi static files serve karva mate
+// Static files (HTML, CSS, JS, Sounds) mate
 app.use(express.static(path.join(__dirname, "public")));
 
-// User Data (Hashed Passwords)
+// User Database (Priyansh ane Nirali mate)
 const users = {
     Priyansh: bcrypt.hashSync("Priyansh@0702", 10),
     Nirali: bcrypt.hashSync("Nirali@0810", 10)
 };
 
-// Currently ketla loko chat ma che e track karva mate
+// Active users tracking
 let activeUsers = {};
 
 io.on("connection", (socket) => {
-    console.log("A user connected:", socket.id);
+    console.log("New connection:", socket.id);
 
-    // Login logic
+    // 1. LOGIN EVENT
     socket.on("login", async ({ username, password }) => {
-        // 1. User check
+        // User check
         if (!users[username]) {
             return socket.emit("errorMsg", "User not allowed");
         }
 
-        // 2. Password check
+        // Password verify
         const valid = await bcrypt.compare(password, users[username]);
         if (!valid) {
             return socket.emit("errorMsg", "Wrong password");
         }
 
-        // 3. Limit check (Only 2 people can chat)
-        if (Object.keys(activeUsers).length >= 2 && !activeUsers[username]) {
-            return socket.emit("errorMsg", "Chat room is full");
-        }
-
-        // User ne active list ma add karo
+        // Session store
         activeUsers[username] = socket.id;
         socket.username = username;
 
         socket.emit("loginSuccess");
-        console.log(`${username} logged in.`);
+        console.log(`${username} is now online.`);
     });
 
-    // Message Handle logic
+    // 2. MESSAGE EVENT (Real-time broadcasting)
     socket.on("message", (msg) => {
         if (!socket.username) return;
 
-        // Potana sivay na bija user ne message moklavo
-        socket.broadcast.emit("message", {
+        // io.emit thi badha ne message malse (Sender + Receiver)
+        io.emit("message", {
             user: socket.username,
             text: msg
         });
     });
 
-    // Disconnect logic
+    // 3. SEEN LOGIC
+    socket.on("markSeen", () => {
+        if (!socket.username) return;
+        // Bija user ne janavo ke message vanchai gayo che
+        socket.broadcast.emit("userSeen", { seenBy: socket.username });
+    });
+
+    // 4. DISCONNECT
     socket.on("disconnect", () => {
         if (socket.username) {
+            console.log(`${socket.username} logged out.`);
             delete activeUsers[socket.username];
-            console.log(`${socket.username} disconnected.`);
         }
     });
 });
 
+// Port Setting (0.0.0.0 thi network ma koi pan connect thai shakshe)
 const PORT = process.env.PORT || 3000;
-
 server.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`Local: http://localhost:${PORT}`);
 });

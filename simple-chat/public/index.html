@@ -1,232 +1,125 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Instagram Style Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        
-        body { background-color: #000; color: #fff; height: 100vh; overflow: hidden; }
-
-        /* --- LOGIN PAGE --- */
-        #login {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            background: #000;
-        }
-
-        .login-card {
-            width: 100%;
-            max-width: 350px;
-            padding: 40px;
-            border: 1px solid #262626;
-            text-align: center;
-            background: #000;
-        }
-
-        .insta-logo {
-            width: 180px;
-            margin-bottom: 30px;
-            filter: invert(1);
-        }
-
-        #login input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 8px;
-            background: #121212;
-            border: 1px solid #363636;
-            border-radius: 3px;
-            color: #fff;
-            font-size: 12px;
-        }
-
-        #login button {
-            width: 100%;
-            padding: 8px;
-            background-color: #0095f6;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-
-        /* --- CHAT SECTION --- */
-        .chat-container {
-            display: none;
-            flex-direction: column;
-            height: 100vh;
-            background: #000;
-        }
-
-        .chat-header {
-            padding: 15px;
-            border-bottom: 1px solid #262626;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            background: linear-gradient(45deg, #f09433, #bc1888);
-            border-radius: 50%;
-        }
-
-        .messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px 15px;
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .message {
-            max-width: 70%;
-            padding: 8px 15px;
-            font-size: 14px;
-            line-height: 1.4;
-            border-radius: 20px;
-            word-wrap: break-word;
-        }
-
-        .me {
-            align-self: flex-end;
-            background-color: #3797f0;
-            color: white;
-        }
-
-        .other {
-            align-self: flex-start;
-            background-color: #262626;
-            color: white;
-        }
-
-        /* --- INPUT AREA --- */
-        .input-area {
-            padding: 15px;
-            border-top: 1px solid #262626;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .input-wrapper {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            background: #000;
-            border: 1px solid #363636;
-            border-radius: 25px;
-            padding: 5px 15px;
-        }
-
-        #messageInput {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: white;
-            padding: 8px 0;
-            outline: none;
-            font-size: 14px;
-        }
-
-        .send-btn {
-            background: none;
-            border: none;
-            color: #0095f6;
-            font-weight: 700;
-            font-size: 14px;
-            cursor: pointer;
-        }
+        /* CSS Same Rahse (Upar mujab) */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+        body { background: #000; color: #fff; height: 100vh; overflow: hidden; }
+        #login { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; }
+        .login-box { background: #000; padding: 30px; border: 1px solid #262626; border-radius: 8px; text-align: center; width: 90%; max-width: 350px; }
+        input { width: 100%; padding: 12px; margin: 5px 0; background: #121212; border: 1px solid #363636; border-radius: 4px; color: #fff; outline: none; }
+        button { width: 100%; padding: 10px; background: #0095f6; border: none; border-radius: 8px; color: #fff; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .chat-container { display: none; flex-direction: column; height: 100vh; }
+        .header { padding: 15px; border-bottom: 1px solid #262626; text-align: center; font-weight: 600; }
+        .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 5px; }
+        .message { max-width: 75%; padding: 10px 15px; border-radius: 20px; font-size: 14px; word-wrap: break-word; }
+        .me { align-self: flex-end; background: #3797f0; color: #fff; border-bottom-right-radius: 4px; }
+        .other { align-self: flex-start; background: #262626; color: #fff; border-bottom-left-radius: 4px; }
+        .seen-status { font-size: 11px; color: #a8a8a8; text-align: right; padding: 2px 15px 10px; display: none; }
+        .input-area { padding: 12px; border-top: 1px solid #262626; display: flex; align-items: center; gap: 10px; }
+        .input-box { flex: 1; border-radius: 25px; padding: 8px 15px; border: 1px solid #363636; background: #000; display: flex; }
+        #messageInput { flex: 1; background: transparent; border: none; color: #fff; outline: none; }
+        .send-btn { background: none; border: none; color: #0095f6; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="login">
-        <div class="login-card">
-            <h1 style="font-style: italic; font-size: 30px; margin-bottom: 25px;">ChatApp</h1>
-            <input id="username" placeholder="Username">
-            <input id="password" type="password" placeholder="Password">
-            <button onclick="login()">Log In</button>
-            <p style="color: #a8a8a8; font-size: 12px; margin-top: 20px;">from <span style="color: #fff; font-weight: bold;">Meta</span></p>
+<audio id="sentSound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3"></audio>
+
+<audio id="rcvSound" src="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"></audio>
+<div id="login">
+    <div class="login-box">
+        <h1 style="font-style: italic; margin-bottom: 20px;">Instagram</h1>
+        <input id="username" placeholder="Username">
+        <input id="password" type="password" placeholder="Password">
+        <button onclick="requestNotify()">Log In</button>
+    </div>
+</div>
+
+<div class="chat-container" id="chat">
+    <div class="header" id="chatHeader">Direct Message</div>
+    <div class="messages" id="messages"></div>
+    <div id="seenText" class="seen-status">Seen</div>
+    <div class="input-area">
+        <div class="input-box">
+            <input id="messageInput" placeholder="Message..." autocomplete="off">
+            <button class="send-btn" onclick="sendMessage()">Send</button>
         </div>
     </div>
+</div>
 
-    <div class="chat-container" id="chat">
-        <div class="chat-header">
-            <div class="user-avatar"></div>
-            <div>
-                <p id="displayUser" style="font-weight: 600; font-size: 14px;">Direct Message</p>
-                <p style="font-size: 12px; color: #a8a8a8;">Active now</p>
-            </div>
-        </div>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    const socket = io();
+    let myUser = "";
 
-        <div class="messages" id="messages"></div>
+    // Notification Permission
+    function requestNotify() {
+        Notification.requestPermission();
+        login();
+    }
 
-        <div class="input-area">
-            <div class="input-wrapper">
-                <input id="messageInput" placeholder="Message..." autocomplete="off">
-                <button class="send-btn" onclick="sendMessage()">Send</button>
-            </div>
-        </div>
-    </div>
+    function login() {
+        myUser = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        if(!myUser || !password) return alert("Fill all details");
+        socket.emit("login", { username: myUser, password });
+    }
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script>
-        const socket = io();
+    socket.on("loginSuccess", () => {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("chat").style.display = "flex";
+        document.getElementById("chatHeader").innerText = myUser;
+    });
 
-        function login() {
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
-            socket.emit("login", { username, password });
-        }
+    socket.on("errorMsg", (msg) => alert(msg));
 
-        socket.on("loginSuccess", () => {
-            document.getElementById("login").style.display = "none";
-            document.getElementById("chat").style.display = "flex";
-            document.getElementById("displayUser").innerText = document.getElementById("username").value;
-        });
+    function sendMessage() {
+        const input = document.getElementById("messageInput");
+        if (!input.value.trim()) return;
+        
+        socket.emit("message", input.value);
+        document.getElementById("sentSound").play().catch(e => {}); // Sent Sound
+        input.value = "";
+    }
 
-        socket.on("errorMsg", (msg) => {
-            alert(msg);
-        });
+    document.getElementById("messageInput").addEventListener("keypress", (e) => {
+        if (e.key === "Enter") sendMessage();
+    });
 
-        function sendMessage() {
-            const input = document.getElementById("messageInput");
-            if (!input.value.trim()) return;
+    socket.on("message", (data) => {
+        const type = (data.user === myUser) ? "me" : "other";
+        
+        const div = document.createElement("div");
+        div.className = "message " + type;
+        div.innerText = data.text;
+        const msgDiv = document.getElementById("messages");
+        msgDiv.appendChild(div);
+        msgDiv.scrollTop = msgDiv.scrollHeight;
 
-            socket.emit("message", input.value);
-            addMessage(input.value, "me");
-            input.value = "";
-        }
+        document.getElementById("seenText").style.display = "none";
 
-        document.getElementById("messageInput").addEventListener("keypress", (e) => {
-            if (e.key === "Enter") sendMessage();
-        });
-
-        socket.on("message", (data) => {
-            addMessage(data.text, "other");
-        });
-
-        function addMessage(text, type) {
-            const div = document.createElement("div");
-            div.className = "message " + type;
-            div.innerText = text;
-            const messagesDiv = document.getElementById("messages");
-            messagesDiv.appendChild(div);
+        if (type === "other") {
+            // Receive Sound
+            document.getElementById("rcvSound").play().catch(e => {});
             
-            // Auto-scroll
-            messagesDiv.scrollTo({ top: messagesDiv.scrollHeight, behavior: 'smooth' });
+            // Notification: Jo browser hidden hoy to
+            if (document.hidden && Notification.permission === "granted") {
+                new Notification("New Message", {
+                    body: "You have a new message",
+                    icon: "https://cdn-icons-png.flaticon.com/512/174/174855.png"
+                });
+            }
+            socket.emit("markSeen");
         }
-    </script>
+    });
+
+    socket.on("userSeen", () => {
+        document.getElementById("seenText").style.display = "block";
+        const msgDiv = document.getElementById("messages");
+        msgDiv.scrollTop = msgDiv.scrollHeight;
+    });
+</script>
 </body>
 </html>
