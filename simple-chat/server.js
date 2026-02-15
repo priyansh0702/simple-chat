@@ -10,20 +10,16 @@ const io = new Server(server, { cors: { origin: "*" } });
 
 app.use(express.static(path.join(__dirname, "public")));
 
-// 1. USER DATABASE
+// USER DATABASE
 const users = {
     Priyansh: bcrypt.hashSync("Priyansh@0702", 10),
     Nirali: bcrypt.hashSync("Nirali@0810", 10)
 };
 
-// 2. STATE
 let chatHistory = [];
 let onlineUsers = new Set();
 
 io.on("connection", (socket) => {
-    console.log("Connected:", socket.id);
-
-    // LOGIN LOGIC
     socket.on("login", async ({ username, password }) => {
         if (!users[username]) return socket.emit("errorMsg", "User not found");
         
@@ -35,41 +31,34 @@ io.on("connection", (socket) => {
             socket.emit("loginSuccess");
             socket.emit("loadHistory", chatHistory);
             
-            // Broadcast to everyone that someone is online
+            // Immediately update everyone on who is online
             io.emit("userStatusUpdate", Array.from(onlineUsers));
-            console.log(`${username} logged in.`);
         } else {
             socket.emit("errorMsg", "Wrong password");
         }
     });
 
-    // 3. ENCRYPTED MESSAGE LOGIC
     socket.on("message", (encryptedMsg) => {
         if (!socket.username || !encryptedMsg) return;
-
         const messageData = { 
             user: socket.username, 
-            text: encryptedMsg, // Ciphertext only
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            text: encryptedMsg, 
+            time: new Date().toLocaleTimeString() 
         };
-
         chatHistory.push(messageData);
         if (chatHistory.length > 200) chatHistory.shift(); 
-
         io.emit("message", messageData);
     });
 
-    // DISCONNECT LOGIC
     socket.on("disconnect", () => {
         if (socket.username) {
             onlineUsers.delete(socket.username);
             io.emit("userStatusUpdate", Array.from(onlineUsers));
-            console.log(`${socket.username} disconnected.`);
         }
     });
 });
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server is flying on port ${PORT}`);
+    console.log(`🚀 Server running on port ${PORT}`);
 });
