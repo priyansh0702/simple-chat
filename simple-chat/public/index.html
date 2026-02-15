@@ -10,31 +10,41 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
         body, html { background: #000; color: #fff; height: 100%; width: 100%; overflow: hidden; position: fixed; }
+        
         #login { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; background: #000; position: absolute; z-index: 1000; }
         .insta-logo { font-size: 35px; font-weight: bold; font-style: italic; margin-bottom: 30px; }
         .login-box { width: 85%; max-width: 350px; text-align: center; }
         input { width: 100%; padding: 12px; margin: 8px 0; background: #121212; border: 0.5px solid #363636; border-radius: 8px; color: #fff; outline: none; }
         .login-btn { width: 100%; padding: 12px; background: #0095f6; border: none; border-radius: 8px; font-weight: bold; color: #fff; cursor: pointer; }
+
         #chat { display: none; flex-direction: column; height: 100%; }
         .header { height: 70px; border-bottom: 1px solid #262626; display: flex; align-items: center; justify-content: space-between; padding: 0 15px; padding-top: env(safe-area-inset-top); }
+        .user-info { display: flex; flex-direction: column; }
         #userStatus { font-size: 12px; color: #a8a8a8; }
-        .call-btn { background: none; border: none; color: #fff; font-size: 22px; cursor: pointer; margin-left: 12px; }
+        
+        /* CALL BUTTONS */
+        .call-actions { display: flex; align-items: center; gap: 15px; }
+        .call-btn { background: none; border: none; color: #fff; font-size: 24px; cursor: pointer; }
+
         .messages { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column-reverse; gap: 10px; }
         .message { max-width: 75%; padding: 10px 15px; border-radius: 20px; font-size: 15px; word-wrap: break-word; }
         .me { align-self: flex-end; background: #3797f0; }
         .other { align-self: flex-start; background: #262626; }
+
         .input-area { padding: 10px 15px; border-top: 1px solid #262626; display: flex; align-items: center; gap: 10px; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
         #messageInput { flex: 1; background: transparent; border: 1px solid #363636; border-radius: 25px; padding: 10px 15px; color: #fff; outline: none; }
-        
+
+        /* VIDEO UI - AA IMPORTANT CHE */
         #video-grid { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; }
         #remote-video { width: 100%; height: 100%; object-fit: cover; }
         #local-video { width: 100px; height: 150px; position: absolute; top: 50px; right: 20px; border: 1px solid #fff; border-radius: 12px; object-fit: cover; transform: scaleX(-1); }
         .call-controls { position: absolute; bottom: 60px; width: 100%; display: flex; justify-content: center; gap: 20px; }
-        .ctrl-btn { background: rgba(255,255,255,0.2); border: none; width: 55px; height: 55px; border-radius: 50%; color: #fff; font-size: 22px; backdrop-filter: blur(15px); }
+        .ctrl-btn { background: rgba(255,255,255,0.2); border: none; width: 60px; height: 60px; border-radius: 50%; color: #fff; font-size: 25px; backdrop-filter: blur(15px); cursor: pointer; }
         .end-btn { background: #ff3b30; transform: rotate(135deg); }
     </style>
 </head>
 <body>
+
     <div id="login">
         <div class="login-box">
             <div class="insta-logo">Instagram</div>
@@ -50,15 +60,16 @@
                 <div id="chatHeader" style="font-weight: bold;">User</div>
                 <div id="userStatus">Offline</div>
             </div>
-            <div>
+            <div class="call-actions">
                 <button class="call-btn" onclick="startCall(false)">📞</button>
                 <button class="call-btn" onclick="startCall(true)">📹</button>
+                <button class="call-btn" onclick="logout()" style="font-size: 20px;">🚪</button>
             </div>
         </div>
         <div class="messages" id="messages"></div>
         <div class="input-area">
             <input id="messageInput" placeholder="Message..." autocomplete="off">
-            <button onclick="sendMessage()" style="color:#0095f6; background:none; border:none; font-weight:bold;">Send</button>
+            <button onclick="sendMessage()" style="color:#0095f6; background:none; border:none; font-weight:bold; cursor:pointer;">Send</button>
         </div>
     </div>
 
@@ -97,7 +108,7 @@
                 const iv = new Uint8Array(atob(data.iv).split("").map(c => c.charCodeAt(0)));
                 const dec = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, encryptionKey, ct);
                 return new TextDecoder().decode(dec);
-            } catch (e) { return "🔒 Encrypted Message"; }
+            } catch (e) { return "🔒 Message Decryption Error"; }
         }
 
         async function doLogin() {
@@ -124,6 +135,8 @@
             document.getElementById("login").style.display = "none";
             document.getElementById("chat").style.display = "flex";
             document.getElementById("chatHeader").innerText = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
+            
+            // Peer initialize kare che calls mate
             peer = new Peer(myUser);
             peer.on('call', async (call) => {
                 if (confirm("Incoming Call... Accept?")) {
@@ -173,14 +186,16 @@
             }
         });
 
+        // --- CALL FUNCTIONS ---
         async function startCall(video) {
             try {
                 localStream = await navigator.mediaDevices.getUserMedia({ video: video, audio: true });
                 document.getElementById("video-grid").style.display = "block";
                 document.getElementById("local-video").srcObject = localStream;
                 const target = (myUser === "Priyansh") ? "Nirali" : "Priyansh";
-                handleCall(peer.call(target, localStream));
-            } catch (e) { alert("Camera access required"); }
+                const call = peer.call(target, localStream);
+                handleCall(call);
+            } catch (e) { alert("Camera/Mic access denied."); }
         }
 
         function handleCall(call) {
@@ -200,6 +215,7 @@
             document.getElementById("muteBtn").innerText = track.enabled ? "🎤" : "🔇";
         }
 
+        function logout() { localStorage.clear(); location.reload(); }
         if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');
     </script>
 </body>
